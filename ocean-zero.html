@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>海底小魚大挑戰</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#06233f;
+  font-family:"Microsoft JhengHei","微軟正黑體","PingFang HK","Noto Sans TC","Noto Sans CJK TC",sans-serif;
+  user-select:none;-webkit-user-select:none}
+#stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;color:#0f3d63;
+  background:linear-gradient(180deg,#9ae8ff 0%,#46bdf0 48%,#1b7cc6 100%)}
+#bg{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.ray{position:absolute;top:-60px;width:150px;height:900px;background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,0));
+  transform:rotate(18deg);transform-origin:top}
+.bub{position:absolute;bottom:-50px;border-radius:50%;border:3px solid rgba(255,255,255,.75);
+  background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.7),rgba(255,255,255,.1) 60%);animation:rise linear infinite}
+@keyframes rise{from{transform:translateY(0)}to{transform:translateY(-820px)}}
+#sand{position:absolute;left:0;right:0;bottom:0;height:98px;background:linear-gradient(180deg,#f7dfa6,#eecb85);
+  border-top:6px solid #fff3cf;border-radius:60px 60px 0 0 / 22px 22px 0 0}
+#weeds{position:absolute;left:0;bottom:60px;width:1280px;height:200px;pointer-events:none}
+.screen{position:absolute;inset:0;display:none}
+.screen.active{display:flex}
+
+/* ---------- 按鈕 ---------- */
+.btn{font-family:inherit;font-weight:900;font-size:27px;color:#fff;border:4px solid #fff;cursor:pointer;
+  height:62px;min-width:168px;padding:0 26px;border-radius:20px;text-shadow:0 2px 0 rgba(0,0,0,.2);
+  box-shadow:0 6px 0 rgba(8,50,100,.4);transition:transform .08s,box-shadow .08s,filter .2s}
+.btn:hover:not(:disabled){filter:brightness(1.1)}
+.btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 2px 0 rgba(8,50,100,.4)}
+.btn:disabled{background:#a9c4d8!important;color:#e9f2f8;border-color:rgba(255,255,255,.65);cursor:not-allowed;box-shadow:0 6px 0 #7f9db4;text-shadow:none}
+.b-coral{background:#ff6f4f}.b-teal{background:#10b3a8}.b-violet{background:#8a64f0}.b-navy{background:#2f6fe0}.b-slate{background:#5f7fa6}
+.btn.big{height:92px;font-size:44px;min-width:330px;border-radius:46px}
+
+/* ---------- 封面 / 結尾 ---------- */
+.titlebox{position:absolute;left:50%;top:70px;transform:translateX(-50%);width:880px;text-align:center;padding:20px 20px 24px;
+  background:linear-gradient(180deg,#ff8a6a,#ff6a4a);border:8px solid #fff;border-radius:44px;box-shadow:0 10px 0 rgba(8,50,100,.35)}
+.titlebox h1{font-size:96px;line-height:1.1;color:#fff;letter-spacing:8px;font-weight:900;
+  text-shadow:0 5px 0 #c2402a,3px 3px 0 #c2402a,-3px 3px 0 #c2402a,0 10px 16px rgba(0,0,0,.2)}
+.titlebox p{margin-top:8px;font-size:36px;font-weight:800;color:#fff3e6}
+.chars{position:absolute;left:0;right:0;bottom:70px;display:flex;justify-content:center;align-items:flex-end;gap:120px}
+.chars svg{overflow:visible}
+.sway{animation:sway 3s ease-in-out infinite;transform-origin:50% 100%}
+.sway2{animation:sway 2.6s ease-in-out .4s infinite;transform-origin:50% 100%}
+@keyframes sway{0%,100%{transform:rotate(-2.5deg) translateY(0)}50%{transform:rotate(2.5deg) translateY(-10px)}}
+.startwrap{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center}
+.endtitle{position:absolute;top:56px;left:50%;transform:translateX(-50%);width:1120px;text-align:center;padding:16px 10px 20px;
+  background:linear-gradient(180deg,#ff8a6a,#ff6a4a);border:8px solid #fff;border-radius:40px;box-shadow:0 10px 0 rgba(8,50,100,.35)}
+.endtitle h1{font-size:62px;color:#fff;font-weight:900;letter-spacing:3px;text-shadow:0 4px 0 #c2402a}
+.sum{position:absolute;top:238px;left:50%;transform:translateX(-50%);padding:16px 44px;text-align:center;font-size:42px;line-height:1.45;
+  font-weight:900;color:#0f3d63;background:#fff;border:7px solid #10b3a8;border-radius:34px;box-shadow:0 8px 0 rgba(8,50,100,.25)}
+
+/* ---------- 遊戲畫面 ---------- */
+#game{flex-direction:column;padding:10px 28px 12px}
+.topbar{height:50px;display:flex;align-items:center;justify-content:space-between;flex:none}
+.pill{background:#ff6f4f;color:#fff;font-size:28px;font-weight:900;padding:0 28px;border-radius:14px;height:46px;line-height:40px;border:4px solid #fff;
+  box-shadow:0 4px 0 rgba(8,50,100,.35)}
+.dots{display:flex;gap:14px;align-items:center}
+.dot{width:26px;height:26px;border-radius:50%;border:3px solid #fff;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.9),rgba(255,255,255,.25) 60%)}
+.dot.on{background:#ffb02e}.dot.done{background:#34d399}
+.right{display:flex;align-items:center;gap:12px}
+.timer{display:flex;align-items:center;gap:6px;height:46px;padding:0 8px;background:#fff;border:4px solid #fff;border-radius:23px;box-shadow:0 4px 0 rgba(8,50,100,.35)}
+.timer span{font-size:30px;font-weight:900;color:#0f3d63;min-width:70px;text-align:center;font-variant-numeric:tabular-nums}
+.timer .tb{font-family:inherit;width:34px;height:34px;border-radius:50%;border:none;background:#d9ecfa;color:#2f6fe0;font-size:22px;font-weight:900;cursor:pointer}
+.timer .tb.go{background:#10b3a8;color:#fff;font-size:18px}
+.timer.run span{color:#2f6fe0}.timer.low span{color:#ff5a2e;animation:pulse .6s infinite}
+.timer.end{background:#ff6f4f}.timer.end span{color:#fff;animation:pulse .5s infinite}
+.fsbtn{height:44px;min-width:0;font-size:21px;padding:0 20px;border-radius:14px;box-shadow:0 4px 0 rgba(8,50,100,.35)}
+.qrow{flex:none;margin:8px auto 0;min-height:70px;display:flex;align-items:center;justify-content:center;gap:14px;
+  background:rgba(255,255,255,.92);border:5px solid #fff;border-radius:36px;padding:2px 30px 2px 18px;box-shadow:0 6px 0 rgba(8,50,100,.25)}
+.qrow svg{flex:none}
+.q{font-size:41px;font-weight:900;color:#0f3d63;line-height:1.2;text-align:center}
+.content{flex:1;min-height:0;display:flex;justify-content:center;align-items:center;position:relative}
+.strip{flex:none;height:86px;display:flex;align-items:center;justify-content:center}
+.hint,.ans1,.raise{padding:2px 34px;border-radius:30px;background:rgba(255,255,255,.92);box-shadow:0 5px 0 rgba(8,50,100,.22);white-space:nowrap}
+.hint{font-size:29px;font-weight:800;color:#3d6a92}
+.raise{font-size:54px;font-weight:900;color:#ff5a2e;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.ans1{font-size:50px;font-weight:900;color:#0b8f5a}
+.controls{flex:none;height:76px;display:flex;justify-content:center;align-items:center;gap:20px;position:relative;z-index:2}
+
+/* ---------- 魚缸 ---------- */
+.bowls{display:flex;gap:46px;align-items:flex-start}
+.bowlwrap{display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;transition:transform .5s ease,opacity .5s ease}
+.buoy{width:62px;height:62px;border-radius:50%;background:#ff6f4f;border:5px solid #fff;color:#fff;font-size:36px;font-weight:900;line-height:52px;text-align:center;
+  box-shadow:0 4px 0 rgba(8,50,100,.3);transition:background .4s,transform .4s}
+.bowlwrap.pick{transform:scale(1.05);z-index:3}
+.bowlwrap.pick .buoy{background:#10b36f;transform:scale(1.2)}
+.bowlwrap.dim{opacity:.3}
+.bowlwrap .ring{position:absolute;left:12px;right:12px;top:68px;height:268px;border-radius:50%;border:10px solid #34d399;
+  box-shadow:0 0 0 8px rgba(52,211,153,.35);opacity:0;transition:opacity .4s;pointer-events:none}
+.bowlwrap.pick .ring{opacity:1}
+.zero-badge{position:absolute;left:50%;top:150px;width:104px;height:104px;margin-left:-52px;border-radius:50%;background:#10b36f;border:6px solid #fff;color:#fff;
+  font-size:76px;font-weight:900;line-height:90px;text-align:center;box-shadow:0 6px 0 rgba(0,0,0,.2);z-index:7;animation:pop .5s ease-out both}
+.card{position:relative;background:rgba(255,255,255,.55);border:6px solid #fff;border-radius:40px;padding:14px 26px 10px;box-shadow:0 8px 0 rgba(8,50,100,.25)}
+.sidewrap{display:flex;align-items:center;gap:56px}
+.tcol{display:flex;flex-direction:column;align-items:center;gap:4px}
+.cardrow{display:flex;align-items:center;gap:20px}
+.lab{font-size:30px;font-weight:900;color:#fff;background:#2f6fe0;border:4px solid #fff;border-radius:16px;padding:0 24px;height:44px;line-height:36px}
+.arrowbig{display:flex;flex-direction:column;align-items:center;font-size:72px;line-height:1;color:#2f6fe0;font-weight:900}
+.arrowbig span{font-size:24px;color:#2a5f8f;margin-top:4px;white-space:nowrap}
+.signcol{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:260px}
+
+/* ---------- 木牌 ---------- */
+.sign{position:relative;margin-top:26px;min-width:178px;height:92px;padding:0 24px;display:flex;align-items:baseline;justify-content:center;gap:6px;line-height:82px;
+  background:linear-gradient(180deg,#f2c98a,#e2ab62);border:6px solid #a8703a;border-radius:16px;font-size:62px;font-weight:900;color:#5a3412;
+  box-shadow:0 6px 0 rgba(8,50,100,.3)}
+.sign::before,.sign::after{content:"";position:absolute;top:-26px;width:6px;height:24px;background:#7a5230;border-radius:3px}
+.sign::before{left:30px}.sign::after{right:30px}
+.sign small{font-size:32px}
+.sign.wrong{border-color:#e03a3a}
+.sign.wrong b{opacity:.5}
+.sign.wrong .x{position:absolute;left:-10px;top:-12px;width:calc(100% + 20px);height:calc(100% + 24px);pointer-events:none}
+.sign.right{border-color:#10b36f;background:linear-gradient(180deg,#e9fff1,#bff0d2);color:#0b5f3c;animation:pop .5s ease-out}
+.arrow{font-size:46px;color:#0b8f5a;font-weight:900;animation:pop .5s ease-out}
+@keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.reading{display:flex;align-items:center;gap:14px;background:#fff;border:6px solid #8a64f0;border-radius:26px;padding:4px 30px;
+  box-shadow:0 6px 0 rgba(8,50,100,.25);animation:pop .5s ease-out;margin-top:6px}
+.reading .rl{font-size:32px;font-weight:800;color:#6c47d6}
+.reading b{font-size:68px;font-weight:900;color:#0f3d63;letter-spacing:6px;line-height:1.15}
+
+/* ---------- 特效 ---------- */
+.star{position:absolute;animation:starpop 1.6s ease-out forwards;opacity:0}
+@keyframes starpop{0%{transform:scale(0) rotate(0);opacity:0}30%{opacity:1}60%{transform:scale(1.2) rotate(180deg);opacity:1}100%{transform:scale(1) rotate(360deg) translateY(-14px);opacity:0}}
+.confetti{position:absolute;top:-30px;width:14px;height:22px;animation:fall linear forwards;z-index:20;pointer-events:none}
+@keyframes fall{to{transform:translateY(780px) rotate(720deg)}}
+.note-g{animation:noteIn .5s ease-out both}
+@keyframes noteIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.bowl{display:block;filter:drop-shadow(0 6px 4px rgba(8,50,100,.22));overflow:visible}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"></div>
+  <div id="sand"></div>
+  <svg id="weeds" viewBox="0 0 1280 200" aria-hidden="true"></svg>
+
+  <!-- 封面 -->
+  <section id="startScreen" class="screen active">
+    <div class="titlebox"><h1>海底小魚大挑戰</h1><p>幫小章和阿龜認識 0！</p></div>
+    <div class="chars" id="startChars"></div>
+    <div class="startwrap"><button class="btn b-teal big" id="startBtn">開始挑戰</button></div>
+  </section>
+
+  <!-- 遊戲畫面 -->
+  <section id="game" class="screen">
+    <div class="topbar">
+      <div class="pill" id="levelPill">第1關／共3關</div>
+      <div class="dots" id="dots"></div>
+      <div class="right">
+        <div class="timer" id="timer"><button class="tb" id="tMinus">−</button><span id="tTime">0:30</span><button class="tb" id="tPlus">＋</button><button class="tb go" id="tGo">▶</button></div>
+        <button class="btn b-slate fsbtn" id="fsBtn">全螢幕</button>
+      </div>
+    </div>
+    <div class="qrow"><span id="qAvatar"></span><div class="q" id="qText"></div></div>
+    <div class="content" id="content"></div>
+    <div class="strip" id="strip"></div>
+    <div class="controls">
+      <button class="btn b-slate" id="retryBtn">重新作答</button>
+      <button class="btn b-coral" id="raiseBtn">舉起答案</button>
+      <button class="btn b-teal" id="revealBtn">揭曉答案</button>
+      <button class="btn b-navy" id="nextBtn">下一關</button>
+    </div>
+  </section>
+
+  <!-- 完成畫面 -->
+  <section id="endScreen" class="screen">
+    <div class="endtitle"><h1>恭喜你！成功完成海底小魚大挑戰！</h1></div>
+    <div class="sum">沒有魚的時候，用 0 表示。</div>
+    <div class="chars" id="endChars"></div>
+    <div class="startwrap"><button class="btn b-teal big" id="againBtn">重新挑戰</button></div>
+  </section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const stage = $('stage');
+function fit(){
+  const s = Math.min(window.innerWidth/1280, window.innerHeight/720);
+  stage.style.transform = 'scale('+s+')';
+  stage.style.left = ((window.innerWidth-1280*s)/2)+'px';
+  stage.style.top  = ((window.innerHeight-720*s)/2)+'px';
+}
+window.addEventListener('resize', fit); fit();
+$('fsBtn').onclick = ()=>{ if(!document.fullscreenElement) document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); else document.exitFullscreen(); };
+document.addEventListener('fullscreenchange',()=>{ $('fsBtn').textContent = document.fullscreenElement ? '退出全螢幕' : '全螢幕'; fit(); });
+
+/* ===== 背景：光線、氣泡、海草 ===== */
+(function(){
+  let h='';
+  [120,430,760,1060].forEach((x,i)=>{ h+=`<div class="ray" style="left:${x}px;opacity:${.55-i*.07}"></div>`; });
+  for(let i=0;i<16;i++){
+    const s=10+Math.random()*28;
+    h+=`<div class="bub" style="left:${Math.random()*1240}px;width:${s}px;height:${s}px;animation-duration:${9+Math.random()*10}s;animation-delay:-${Math.random()*14}s"></div>`;
+  }
+  $('bg').innerHTML=h;
+  let w='';
+  [[40,150],[110,110],[1170,150],[1230,100],[640,70]].forEach(([x,hh],i)=>{
+    const c=['#2fbf7f','#1fa56d','#3ccf8e'][i%3];
+    w+=`<path d="M${x} 200 C${x-26} ${200-hh*.35} ${x+26} ${200-hh*.65} ${x} ${200-hh}" fill="none" stroke="${c}" stroke-width="16" stroke-linecap="round"/>`;
+  });
+  $('weeds').innerHTML=w;
+})();
+
+/* ===== 角色（原創）：小章（粉紅章魚）、阿龜（綠色海龜） ===== */
+function octopus(w){
+  let legs='';
+  for(let i=0;i<6;i++){
+    const x=46+i*22;
+    legs+=`<path d="M${x} 150 q${i%2?-14:14} 34 ${i%2?8:-8} 58" fill="none" stroke="#ff7fa8" stroke-width="17" stroke-linecap="round"/>`;
+  }
+  return `<svg viewBox="0 0 200 230" width="${w}" height="${w*1.15}" aria-hidden="true">${legs}
+    <ellipse cx="100" cy="92" rx="76" ry="82" fill="#ff8fb4"/>
+    <ellipse cx="72" cy="52" rx="20" ry="11" fill="#fff" opacity=".35" transform="rotate(-30 72 52)"/>
+    <circle cx="68" cy="98" r="22" fill="#fff"/><circle cx="132" cy="98" r="22" fill="#fff"/>
+    <circle cx="72" cy="101" r="11" fill="#2a2150"/><circle cx="128" cy="101" r="11" fill="#2a2150"/>
+    <circle cx="76" cy="96" r="4" fill="#fff"/><circle cx="132" cy="96" r="4" fill="#fff"/>
+    <path d="M78 134 Q100 156 122 134" fill="none" stroke="#a02f5a" stroke-width="6" stroke-linecap="round"/>
+    <ellipse cx="44" cy="124" rx="11" ry="7" fill="#ff5f95" opacity=".5"/><ellipse cx="156" cy="124" rx="11" ry="7" fill="#ff5f95" opacity=".5"/></svg>`;
+}
+function turtle(w){
+  return `<svg viewBox="0 0 200 200" width="${w}" height="${w}" aria-hidden="true">
+    <ellipse cx="100" cy="96" rx="84" ry="70" fill="#2fa56f"/><ellipse cx="100" cy="96" rx="84" ry="70" fill="none" stroke="#1e7d52" stroke-width="5"/>
+    <path d="M60 60 L100 44 L140 60 M60 60 L52 104 M140 60 L148 104 M100 44 L100 76 M60 60 L100 76 L140 60" fill="none" stroke="#1e7d52" stroke-width="4" stroke-linejoin="round"/>
+    <ellipse cx="38" cy="158" rx="26" ry="14" fill="#8fd694" transform="rotate(-20 38 158)"/><ellipse cx="162" cy="158" rx="26" ry="14" fill="#8fd694" transform="rotate(20 162 158)"/>
+    <circle cx="100" cy="132" r="48" fill="#a6e3a1"/>
+    <circle cx="82" cy="124" r="14" fill="#fff"/><circle cx="118" cy="124" r="14" fill="#fff"/>
+    <circle cx="85" cy="127" r="7" fill="#2a2150"/><circle cx="115" cy="127" r="7" fill="#2a2150"/>
+    <circle cx="88" cy="123" r="2.5" fill="#fff"/><circle cx="118" cy="123" r="2.5" fill="#fff"/>
+    <path d="M84 150 Q100 164 116 150" fill="none" stroke="#2d7a4f" stroke-width="5" stroke-linecap="round"/>
+    <ellipse cx="66" cy="146" rx="8" ry="5" fill="#ff8fa8" opacity=".6"/><ellipse cx="134" cy="146" rx="8" ry="5" fill="#ff8fa8" opacity=".6"/></svg>`;
+}
+const avatar = who => who==='octo' ? octopus(54) : turtle(54);
+$('startChars').innerHTML = `<div class="sway">${octopus(230)}</div><div class="sway2">${turtle(190)}</div>`;
+$('endChars').innerHTML   = `<div class="sway">${octopus(230)}</div><div class="sway2">${turtle(190)}</div>`;
+
+/* ===== 魚缸與小魚（SVG） ===== */
+const FISH_COL = [['#ff8a3d','#c25a14'],['#ff5f95','#b02f63'],['#8f6bff','#5b3fc4']];
+function fishSVG(x,y,k,flip){
+  const [c,d]=FISH_COL[k%3];
+  return `<g class="fish" transform="translate(${x},${y}) scale(${flip?-1:1},1)">
+    <path d="M-26 0 L-48 -17 L-48 17 Z" fill="${d}"/>
+    <path d="M-6 -17 Q6 -34 18 -16 Z" fill="${d}"/>
+    <ellipse cx="0" cy="0" rx="31" ry="21" fill="${c}" stroke="${d}" stroke-width="3"/>
+    <ellipse cx="2" cy="9" rx="19" ry="8" fill="#fff" opacity=".35"/>
+    <path d="M9 -19 Q18 0 9 19" fill="none" stroke="#fff" stroke-width="5" opacity=".55"/>
+    <circle cx="18" cy="-5" r="6.5" fill="#fff"/><circle cx="20" cy="-5" r="3.2" fill="#2a2150"/>
+    <path d="M25 5 Q29 8 23 9" fill="none" stroke="${d}" stroke-width="2.5" stroke-linecap="round"/></g>`;
+}
+const FISH_POS = {
+  1:[[152,128,0,0]],
+  2:[[112,108,0,0],[196,160,1,1]],
+  3:[[108,100,0,0],[200,122,1,1],[142,182,2,0]]
+};
+let bowlId=0;
+function bowlSVG(n){
+  const id='bw'+(++bowlId);
+  let fish='';
+  (FISH_POS[n]||[]).forEach(p=>{ fish+=fishSVG(p[0],p[1],p[2],p[3]); });
+  return `<svg class="bowl" width="300" height="272" viewBox="0 0 300 272" aria-hidden="true">
+    <defs><clipPath id="${id}"><circle cx="150" cy="138" r="104"/></clipPath>
+      <linearGradient id="${id}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d7f6ff"/><stop offset="1" stop-color="#7fd0f0"/></linearGradient></defs>
+    <ellipse cx="150" cy="256" rx="96" ry="11" fill="rgba(8,50,100,.22)"/>
+    <circle cx="150" cy="138" r="104" fill="url(#${id}w)"/>
+    <g clip-path="url(#${id})">
+      <ellipse cx="150" cy="248" rx="118" ry="44" fill="#f3d38f"/>
+      <circle cx="96" cy="222" r="7" fill="#d9b66a"/><circle cx="214" cy="226" r="8" fill="#d9b66a"/><circle cx="186" cy="214" r="5" fill="#e8c77d"/>
+      <path d="M70 232 C58 200 84 190 70 156" fill="none" stroke="#2fbf7f" stroke-width="9" stroke-linecap="round"/>
+      <path d="M232 232 C246 204 220 192 234 166" fill="none" stroke="#1fa56d" stroke-width="9" stroke-linecap="round"/>
+      <circle cx="120" cy="70" r="5" fill="#fff" opacity=".7"/><circle cx="178" cy="60" r="7" fill="#fff" opacity=".6"/><circle cx="196" cy="88" r="4" fill="#fff" opacity=".7"/>
+    </g>
+    <g class="fishes">${fish}</g>
+    <circle cx="150" cy="138" r="104" fill="rgba(255,255,255,.12)" stroke="#fff" stroke-width="7"/>
+    <path d="M78 96 A84 84 0 0 1 126 54" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity=".75"/>
+    <ellipse cx="150" cy="36" rx="46" ry="9" fill="none" stroke="#fff" stroke-width="6"/></svg>`;
+}
+function emptyNote(svg){
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('class','note-g');
+  g.innerHTML=`<rect x="62" y="136" width="176" height="56" rx="16" fill="#1b5fb8"/>
+    <rect x="62" y="130" width="176" height="56" rx="16" fill="#2f8cf0" stroke="#fff" stroke-width="4"/>
+    <text x="150" y="159" text-anchor="middle" dominant-baseline="central" font-size="36" font-weight="900" fill="#fff"
+      font-family="Microsoft JhengHei,PingFang HK,Noto Sans TC,sans-serif">沒有魚</text>`;
+  svg.appendChild(g);
+}
+
+/* ===== 關卡 ===== */
+const LEVELS = [
+ { who:'octo', q:'小章想找一個沒有小魚的魚缸，哪一個魚缸才是正確的呢？',
+   bowls:[{id:'A',n:1},{id:'B',n:2},{id:'C',n:0}], answer:'C', hint:'請在答題紙上寫下 A、B 或 C' },
+ { who:'octo', q:'小章看見魚缸裏沒有魚，木牌卻寫着1條，你覺得對嗎？應該是多少條？', label:1,
+   hint:'請在答題紙上寫下正確的數字' },
+ { who:'turtle', q:'阿龜把魚缸裏的3條小魚全部放回大海，現在有多少條？請填上數字！', label:null,
+   hint:'請在答題紙上寫下魚缸裏小魚的數目' },
+ { who:'turtle', q:'阿龜看見魚缸裏有2條魚，木牌卻寫着0條，你覺得對嗎？應該是多少條？', label:0, n:2, correct:2,
+   hint:'請在答題紙上寫下正確的數字' }
+];
+let cur = 0, phase = 0, readDone = false;
+
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); }
+const signHTML = label => `<div class="sign" id="sign"><b>${label===null?'？':label}</b><small>條</small></div>`;
+
+function renderLevel(){
+  const L = LEVELS[cur];
+  phase = 0; readDone = false; tReset();
+  $('levelPill').textContent = `第${cur+1}關／共${LEVELS.length}關`;
+  $('dots').innerHTML = LEVELS.map((_,i)=>`<span class="dot ${i<cur?'done':i===cur?'on':''}"></span>`).join('');
+  $('qAvatar').innerHTML = avatar(L.who);
+  $('qText').textContent = L.q;
+  $('qText').style.fontSize = L.q.length>26 ? '34px' : '';
+  $('strip').innerHTML = `<div class="hint">${L.hint}</div>`;
+  document.querySelectorAll('.confetti').forEach(e=>e.remove());
+  if(cur===0){
+    $('content').innerHTML = `<div class="bowls">`+L.bowls.map(b=>
+      `<div class="bowlwrap" data-id="${b.id}"><div class="buoy">${b.id}</div>${bowlSVG(b.n)}<div class="ring"></div></div>`).join('')+`</div>`;
+  } else if(cur===1 || cur===3){
+    $('content').innerHTML = `<div class="sidewrap"><div class="card">${bowlSVG(L.n||0)}</div>
+      <div class="signcol" id="signCol">${signHTML(L.label)}</div></div>`;
+  } else {
+    $('content').innerHTML = `<div class="sidewrap"><div class="card"><div class="cardrow">
+      <div class="tcol"><div class="lab">之前</div>${bowlSVG(3)}</div>
+      <div class="arrowbig">➜<span>放回大海</span></div>
+      <div class="tcol"><div class="lab">現在</div>${bowlSVG(0)}</div></div></div>
+      <div class="signcol" id="signCol">${signHTML(L.label)}</div></div>`;
+  }
+  $('nextBtn').textContent = cur===LEVELS.length-1 ? '完成挑戰' : '下一關';
+  selfCheck(); updateButtons();
+}
+function updateButtons(){
+  $('retryBtn').disabled  = (phase===0);
+  $('raiseBtn').disabled  = (phase!==0);
+  $('revealBtn').disabled = (phase!==1);
+  $('nextBtn').disabled   = (phase!==2);
+}
+function raise(){
+  if(phase!==0) return;
+  phase = 1; tStop(); tShow();
+  $('strip').innerHTML = `<div class="raise">請舉起你的答題紙！</div>`;
+  updateButtons();
+}
+function reveal(){
+  if(phase!==1) return;
+  phase = 2;
+  const L = LEVELS[cur];
+  let line;
+  if(cur===0){
+    const b = L.bowls.find(x=>x.id===L.answer);
+    line = `答對了！${b.id}缸沒有魚，用 0 表示！`;
+    const w = document.querySelector(`.bowlwrap[data-id="${b.id}"]`);
+    w.classList.add('pick');
+    document.querySelectorAll('.bowlwrap').forEach(x=>{ if(x!==w) x.classList.add('dim'); });
+    w.insertAdjacentHTML('beforeend','<div class="zero-badge">0</div>');
+    sparkle(w);
+  } else if(cur===1 || cur===3){
+    const s = $('sign');
+    s.classList.add('wrong');
+    s.insertAdjacentHTML('beforeend',`<svg class="x" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M8 10 L92 90 M92 10 L8 90" stroke="#e03a3a" stroke-width="9" stroke-linecap="round" fill="none"/></svg>`);
+    $('signCol').insertAdjacentHTML('beforeend',`<span class="arrow">▼</span><div class="sign right"><b>${L.correct||0}</b><small>條</small></div>`);
+    line = `不對！應該是${L.correct||0}條！`;
+    if(cur===1) emptyNote(document.querySelector('#content svg.bowl'));
+  } else {
+    const s = $('sign');
+    s.classList.add('right'); s.innerHTML = `<b>0</b><small>條</small>`;
+    line = `完成！魚缸裏有0條，沒有魚！`;
+    const bs = document.querySelectorAll('#content svg.bowl'); emptyNote(bs[bs.length-1]);
+    confetti();
+  }
+  $('strip').innerHTML = `<div class="ans1">${line}</div>`;
+  updateButtons();
+}
+function readNumber(){
+  if(cur===0 || phase!==2 || readDone) return;
+  readDone = true;
+  $('signCol').insertAdjacentHTML('beforeend',`<div class="reading"><span class="rl">讀作</span><b>零</b></div>`);
+  updateButtons();
+}
+function next(){
+  if(phase!==2) return;
+  if(cur < LEVELS.length-1){ cur++; renderLevel(); } else { show('endScreen'); confetti(); }
+}
+
+/* 特效 */
+function sparkle(wrap){
+  const cols=['#ff6f4f','#2f6fe0','#8a64f0','#10b3a8'];
+  [[-10,60],[270,50],[-14,230],[276,236]].forEach((p,i)=>{
+    const s=document.createElement('div'); s.className='star';
+    s.style.cssText=`left:${p[0]}px;top:${p[1]}px;animation-delay:${i*.12}s`;
+    s.innerHTML=`<svg width="46" height="46" viewBox="0 0 24 24"><path fill="${cols[i]}" stroke="#fff" stroke-width="1.2" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.7 7-6.3-3.8-6.3 3.8 1.7-7L2 9.2l7.1-.6z"/></svg>`;
+    wrap.appendChild(s);
+  });
+}
+function confetti(){
+  const cols=['#ff6f4f','#fff','#8a64f0','#10b3a8','#2f6fe0','#ff8fb4'];
+  for(let i=0;i<34;i++){
+    const d=document.createElement('div'); d.className='confetti';
+    d.style.left=(Math.random()*1240)+'px'; d.style.background=cols[i%cols.length];
+    d.style.animationDuration=(1.8+Math.random()*1.4)+'s'; d.style.animationDelay=(Math.random()*.6)+'s';
+    d.style.borderRadius = i%3===0 ? '50%' : '3px';
+    stage.appendChild(d); setTimeout(()=>d.remove(),4200);
+  }
+}
+
+/* 計時器 */
+let tSet=30, tLeft=30, tId=null, ac=null;
+function tShow(){ const m=Math.floor(tLeft/60), sec=tLeft%60; $('tTime').textContent=m+':'+String(sec).padStart(2,'0');
+  const t=$('timer'); t.classList.toggle('run',!!tId); t.classList.toggle('low',!!tId&&tLeft<=5&&tLeft>0); t.classList.toggle('end',tLeft===0&&!tId&&tEnded);
+  $('tGo').textContent = tId ? '❚❚' : '▶'; }
+let tEnded=false;
+function tStop(){ if(tId){clearInterval(tId);tId=null;} }
+function tReset(){ tStop(); tEnded=false; tLeft=tSet; tShow(); }
+function beep(){ try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); [0,.35,.7].forEach(d=>{ const o=ac.createOscillator(),g=ac.createGain(); o.frequency.value=880; g.gain.value=.15; o.connect(g);g.connect(ac.destination); o.start(ac.currentTime+d); o.stop(ac.currentTime+d+.2); }); }catch(e){} }
+function tToggle(){
+  if(tId){ tStop(); tShow(); return; }
+  if(tLeft===0){ tEnded=false; tLeft=tSet; }
+  tEnded=false;
+  tId=setInterval(()=>{ tLeft--; if(tLeft<=0){ tLeft=0; tStop(); tEnded=true; beep(); } tShow(); },1000); tShow();
+}
+$('tGo').onclick=tToggle;
+$('tPlus').onclick=()=>{ tSet=Math.min(300,tSet+10); if(!tId){tEnded=false;tLeft=tSet;} else tLeft=Math.min(300,tLeft+10); tShow(); };
+$('tMinus').onclick=()=>{ tSet=Math.max(10,tSet-10); if(!tId){tEnded=false;tLeft=tSet;} else tLeft=Math.max(1,tLeft-10); tShow(); };
+
+/* 數量自我檢查 */
+function selfCheck(){
+  const expect = cur===0 ? [1,2,0] : cur===1 ? [0] : cur===3 ? [2] : [3,0];
+  const got = [...document.querySelectorAll('#content svg.bowl')].map(s=>s.querySelectorAll('.fish').length);
+  console.assert(JSON.stringify(got)===JSON.stringify(expect),'小魚數量錯誤',got,expect);
+  window.__counts = got;
+}
+
+/* 事件 */
+$('startBtn').onclick = ()=>{ cur=0; show('game'); renderLevel(); };
+$('retryBtn').onclick = ()=>renderLevel();
+$('raiseBtn').onclick = raise;
+$('revealBtn').onclick = reveal;
+$('nextBtn').onclick = next;
+$('againBtn').onclick = ()=>{ cur=0; document.querySelectorAll('.confetti').forEach(e=>e.remove()); show('startScreen'); };
+document.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>b.blur()));
+document.addEventListener('keydown',e=>{
+  if(!$('game').classList.contains('active')) return;
+  if(e.key===' '||e.key==='Enter'||e.key==='ArrowRight'){
+    if(e.target.closest&&e.target.closest('#timer')) return;
+    e.preventDefault();
+    if(phase===0) raise(); else if(phase===1) reveal(); else next();
+  }
+});
+document.addEventListener('keyup',e=>{ if(e.key===' ') e.preventDefault(); });
+</script>
+</body>
+</html>
